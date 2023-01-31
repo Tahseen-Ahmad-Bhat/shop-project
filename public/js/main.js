@@ -4,12 +4,12 @@ const menuToggle = document.querySelector("#side-menu-toggle");
 
 function backdropClickHandler() {
   backdrop.style.display = "none";
-  sideDrawer.classList.toggle("open");
+  sideDrawer.classList.remove("open");
 }
 
 function menuToggleClickHandler() {
   backdrop.style.display = "block";
-  sideDrawer.classList.toggle("open");
+  sideDrawer.classList.add("open");
 }
 
 backdrop.addEventListener("click", backdropClickHandler);
