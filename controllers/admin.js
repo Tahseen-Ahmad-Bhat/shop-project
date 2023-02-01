@@ -3,7 +3,7 @@ const fileHelper = require("../util/file");
 
 const Product = require("../models/product");
 
-const { validationResult } = require("express-validator/check");
+const { validationResult } = require("express-validator");
 
 exports.getAddProduct = (req, res, next) => {
   if (!req.session.isLoggedIn) {

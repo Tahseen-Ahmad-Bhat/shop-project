@@ -1,6 +1,5 @@
 const path = require("path");
 const fs = require("fs");
-const https = require("https");
 
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
@@ -133,6 +132,7 @@ app.use((error, req, res, next) => {
   });
 });
 
+mongoose.set("strictQuery", false);
 mongoose
   .connect(MONGODB_URI)
   .then((result) => {

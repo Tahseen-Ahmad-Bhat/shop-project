@@ -46,7 +46,7 @@ exports.getProduct = (req, res, next) => {
   const prodId = req.params.productId;
   Product.findById(prodId)
     .then((product) => {
-      console.log("Produt Details: ", product);
+      // console.log("Produt Details: ", product);
       res.render("shop/product-detail", {
         product: product,
         docTitle: product.title,
@@ -73,7 +73,7 @@ exports.getIndex = (req, res, next) => {
         .limit(ITEMS_PER_PAGE);
     })
     .then((products) => {
-      console.log("retrived data fir index page: ", products);
+      // console.log("retrived data fir index page: ", products);
       res.render("shop/index", {
         prods: products,
         docTitle: "Shop",
@@ -97,7 +97,7 @@ exports.getCart = (req, res, next) => {
   req.user
     .populate("cart.items.productId")
     .then((user) => {
-      console.log("Cart products: ", user.cart.items);
+      // console.log("Cart products: ", user.cart.items);
       const products = user.cart.items;
       res.render("shop/cart", {
         path: "/cart",
@@ -150,7 +150,7 @@ exports.getCheckout = (req, res, next) => {
   req.user
     .populate("cart.items.productId")
     .then((user) => {
-      console.log("Cart products: ", user.cart.items);
+      // console.log("Cart products: ", user.cart.items);
       products = user.cart.items;
       total = 0;
       products.forEach((p) => {
