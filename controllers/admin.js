@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const fileHelper = require("../util/file");
+const cloudinary = require("../cloudinary");
 
 const Product = require("../models/product");
 
@@ -61,39 +62,29 @@ exports.postAddProduct = (req, res, next) => {
 
   const imageUrl = image.path;
 
-  const product = new Product({
-    // _id: new mongoose.Types.ObjectId("63b184242a77d63ea7fba780"),
-    title: title,
-    price: price,
-    description: description,
-    imageUrl: imageUrl,
-    userId: req.user,
-  });
-  product
-    .save()
+  console.log("Uploaded image Path: ", imageUrl);
+
+  cloudinary.uploader
+    .upload(imageUrl)
     .then((result) => {
-      // console.log("Result is: ", result);
-      console.log("Created product!");
-      res.redirect("/admin/products");
+      const product = new Product({
+        // _id: new mongoose.Types.ObjectId("63b184242a77d63ea7fba780"),
+        title: title,
+        price: price,
+        description: description,
+        imageUrl: result.secure_url,
+        userId: req.user,
+        cloudinary_id: result.public_id,
+      });
+      // console.log("before: ", result.public_id);
+      product.save().then((result) => {
+        // console.log("Result is: ", result);
+        console.log("Created product!");
+        // console.log("after: ", result.cloudinary_id);
+        res.redirect("/admin/products");
+      });
     })
     .catch((err) => {
-      //   return res.status(500).render("admin/edit-product", {
-      //     docTitle: "Add Product",
-      //     path: "/admin/add-product",
-      //     editing: false,
-      //     hasError: true,
-      //     product: {
-      //       title: title,
-      //       imageUrl: imageUrl,
-      //       price: price,
-      //       description: description,
-      //     },
-      //     errorMessage: "Database operation failed, please try again!",
-      //     validationErrors: [],
-      //   });
-
-      // res.redirect("/500");
-
       const error = new Error(err);
       error.httpStatusCode = 500;
       return next(error);
@@ -129,7 +120,7 @@ exports.getEditProduct = (req, res, next) => {
     });
 };
 
-exports.postEditProduct = (req, res, next) => {
+exports.postEditProduct = async (req, res, next) => {
   const { productId, title, price, description } = req.body;
   const image = req.file;
 
@@ -153,29 +144,29 @@ exports.postEditProduct = (req, res, next) => {
     });
   }
 
-  Product.findById(productId)
-    .then((product) => {
-      if (product.userId.toString() !== req.user._id.toString()) {
-        return res.redirect("/");
-      }
-      product.title = title;
-      product.price = price;
-      product.description = description;
-      if (image) {
-        fileHelper.deleteFile(product.imageUrl);
-        product.imageUrl = image.path;
-      }
+  const product = await Product.findById(productId);
 
-      product.save().then((result) => {
-        console.log("Updated Product Into DB");
-        res.redirect("/admin/products");
-      });
-    })
-    .catch((err) => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);
-    });
+  if (product.userId.toString() !== req.user._id.toString()) {
+    return res.redirect("/");
+  }
+
+  product.title = title;
+  product.price = price;
+  product.description = description;
+
+  if (image) {
+    await cloudinary.uploader.destroy(product.cloudinary_id);
+
+    const result = await cloudinary.uploader.upload(image.path);
+
+    product.imageUrl = result.secure_url;
+    product.cloudinary_id = result.public_id;
+  }
+
+  await product.save();
+
+  console.log("Updated Product Into DB");
+  res.redirect("/admin/products");
 };
 
 exports.getProducts = (req, res, next) => {
@@ -203,7 +194,9 @@ exports.deleteProduct = (req, res, next) => {
       if (!product) {
         return next(new Error("Product not found."));
       }
-      fileHelper.deleteFile(product.imageUrl);
+      // fileHelper.deleteFile(product.imageUrl);
+      // delete image from cloudinary
+      cloudinary.uploader.destroy(product.cloudinary_id);
       return Product.deleteOne({ _id: prodId, userId: req.user._id });
     })
     .then((result) => {

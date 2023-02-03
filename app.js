@@ -13,7 +13,6 @@ const csrf = require("csurf");
 const flash = require("connect-flash");
 const multer = require("multer");
 const helmet = require("helmet");
-const compression = require("compression");
 const morgan = require("morgan");
 
 const adminRoutes = require("./routes/admin");
@@ -39,12 +38,12 @@ const csrfProtection = csrf();
 // const certificate = fs.readFileSync("server.cert");
 
 const fileStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "images");
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
+  // destination: (req, file, cb) => {
+  //   cb(null, "images");
+  // },
+  // filename: (req, file, cb) => {
+  //   cb(null, Date.now() + "-" + file.originalname);
+  // },
 });
 
 const fileFilter = (req, file, cb) => {
@@ -55,7 +54,7 @@ const fileFilter = (req, file, cb) => {
   ) {
     cb(null, true);
   } else {
-    cb(null, false);
+    cb(new Error("Unsupported file type!"), false);
   }
 };
 
@@ -67,13 +66,17 @@ const accessLogStream = fs.createWriteStream(
   { flags: "a" }
 );
 
-app.use(helmet());
-app.use(compression());
+// app.use(helmet());
+// app.use(compression());
 app.use(morgan("combined", { stream: accessLogStream }));
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(
-  multer({ storage: fileStorage, fileFilter: fileFilter }).single("image")
+  multer({
+    storage: fileStorage,
+    limits: { fileSize: 1024 * 1024 },
+    fileFilter: fileFilter,
+  }).single("image")
 );
 
 app.use(express.static(path.join(__dirname, "public")));

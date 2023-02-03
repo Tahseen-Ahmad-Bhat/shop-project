@@ -24,6 +24,9 @@ const productSchema = new Schema({
     ref: "User",
     required: true,
   },
+  cloudinary_id: {
+    type: String,
+  },
 });
 
 module.exports = mongoose.model("Product", productSchema);
